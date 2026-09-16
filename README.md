@@ -1,5 +1,7 @@
 # Extraktor — Session-Wissen in Qdrant
 
+[![skills.sh](https://skills.sh/b/nessos666/extraktor)](https://skills.sh/nessos666/extraktor)
+
 Ein Chat mit einem KI-Agenten produziert Wissen: Bugfixes, Entscheidungen, Zahlen,
 Regeln. Beim Löschen der Session ist es weg. Der Extraktor holt es vorher raus
 und legt es dauerhaft ab.

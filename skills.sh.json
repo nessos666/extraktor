@@ -1,0 +1,11 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Extraktor",
+      "description": "Session-Wissen extrahieren und mit Qualitaets-Gate nach Qdrant schreiben.",
+      "skills": ["extraktor"]
+    }
+  ]
+}
