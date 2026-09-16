@@ -145,3 +145,11 @@ dass dasselbe Wissen in zehn Sessions zehnmal landet.
 ## Lizenz
 
 MIT.
+
+---
+
+## Verwandte Tools
+
+🔬 **Find knowledge** → [Wissenschaft](https://github.com/nessos666/wissenschaft) · 🔍 **Search the web** → [SUCHER-1000](https://github.com/nessos666/sucher-1000)
+
+Alle drei sind key-frei und laufen lokal.
