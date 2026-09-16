@@ -1,0 +1,6 @@
+# Laufzeit
+sentence-transformers>=2.7,<4
+qdrant-client>=1.9,<2
+
+# Tests
+pytest>=8.0,<10
