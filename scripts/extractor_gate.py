@@ -159,9 +159,11 @@ class ExtractorGate:
         gates = self.memory_gate.pruefen(fact_text, topic, domain)
         passed = sum(1 for g in gates if g["passed"])
 
-        # Pflicht-Gates: ohne Substanz UND ohne Konkretheit ist es kein Nugget,
-        # egal wie viele der weichen Gates bestehen.
-        pflicht = ("substanz", "konkretheit")
+        # Pflicht-Gates: ohne Substanz, ohne Konkretheit, mit Weichmacher oder als
+        # Fuellphrase erkannt ist es kein Nugget, egal wie viele der weichen Gates bestehen.
+        # (Verschaeft 21.09.2026: vorher waren nur substanz+konkretheit Pflicht, dadurch
+        #  passierte ein als Fuellphrase erkannter Satz mit einer Ziffer das Gate.)
+        pflicht = ("substanz", "konkretheit", "kein_weichmacher", "keine_fuellphrase")
         pflicht_ok = all(g["passed"] for g in gates if g["name"] in pflicht)
 
         if typ_score < 0.25 or not pflicht_ok:

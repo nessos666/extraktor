@@ -10,7 +10,7 @@ echo
 if [ -x .venv/bin/python ]; then echo "✓ venv .............. vorhanden"
 else echo "✗ venv .............. fehlt (./setup.sh)"; FEHLER=1; fi
 
-for f in scripts/upsert.py scripts/extractor_gate.py SKILL.md README.md; do
+for f in scripts/upsert.py scripts/extractor_gate.py scripts/memory_kandidaten.py SKILL.md README.md; do
     if [ -f "$f" ]; then echo "✓ Datei ............. $f"
     else echo "✗ Datei ............. $f FEHLT"; FEHLER=1; fi
 done

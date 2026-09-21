@@ -54,11 +54,11 @@ def main() -> int:
     from sentence_transformers import SentenceTransformer
     from qdrant_client import QdrantClient
 
-    gate = None
+    gate_klasse = None
     if nutze_gate:
         try:
             from extractor_gate import ExtractorGate
-            gate = ExtractorGate()
+            gate_klasse = ExtractorGate
         except ImportError:
             print("Hinweis: extractor_gate.py nicht gefunden — Gate uebersprungen.",
                   file=sys.stderr)
@@ -66,7 +66,7 @@ def main() -> int:
     model = SentenceTransformer(MODEL_NAME)
     client = None if dry_run else QdrantClient(url=url)
 
-    gespeichert = uebersprungen = verworfen = fehler = 0
+    gespeichert = uebersprungen = verworfen = temp_gehalten = fehler = 0
 
     for item in items:
         col = item.get("collection", "knowledge_nuggets")
@@ -75,13 +75,23 @@ def main() -> int:
             verworfen += 1
             continue
 
-        # Optional: Qualitaetspruefung vor dem Schreiben
-        if gate is not None:
+        # Optional: Qualitaetspruefung vor dem Schreiben.
+        # 'typ' kommt aus dem Nugget, damit die TypePriorScorer-Gewichtung greift.
+        # Ohne typ bewertet der Scorer jedes Nugget als 'concept' (Prior 0.60).
+        if gate_klasse is not None:
+            gate = gate_klasse(typ=item.get("typ", "concept"))
             entscheidung = gate.process(text, topic=item.get("topic", ""),
                                         domain=item.get("category", ""))
-            if entscheidung["store"] == "discard":
-                print(f"DISCARD [{col}] score={entscheidung['score']:.2f} :: {text[:60]}...")
-                verworfen += 1
+            # Spezifikation: NUR 'qdrant' wird gespeichert. 'session_db' heisst
+            # "zu schwach fuer Qdrant, nur temporaer halten" — dafuer existiert hier kein
+            # Speicher, also wird der Nugget ausgewiesen und uebersprungen.
+            if entscheidung["store"] != "qdrant":
+                print(f"NICHT-QDRANT ({entscheidung['store']}) [{col}] "
+                      f"score={entscheidung['score']:.2f} :: {text[:60]}...")
+                if entscheidung["store"] == "discard":
+                    verworfen += 1
+                else:
+                    temp_gehalten += 1
                 continue
 
         try:
@@ -121,7 +131,8 @@ def main() -> int:
             fehler += 1
 
     print(f"\n=== extraktor: {gespeichert} gespeichert, {uebersprungen} Duplikate, "
-          f"{verworfen} verworfen, {fehler} Fehler ===")
+          f"{verworfen} verworfen, {temp_gehalten} zu schwach (nicht gespeichert), "
+          f"{fehler} Fehler ===")
     return 0 if fehler == 0 else 1
 
 

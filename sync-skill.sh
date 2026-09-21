@@ -17,6 +17,7 @@ mkdir -p "$ZIEL/scripts"
 cp "$REPO/SKILL.md" "$ZIEL/SKILL.md"
 cp "$REPO/scripts/upsert.py" "$ZIEL/scripts/upsert.py"
 cp "$REPO/scripts/extractor_gate.py" "$ZIEL/scripts/extractor_gate.py"
+cp "$REPO/scripts/memory_kandidaten.py" "$ZIEL/scripts/memory_kandidaten.py"
 rm -rf "$ZIEL/scripts/__pycache__"
 
 echo "✓ Skill wiederhergestellt: $ZIEL"
