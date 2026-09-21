@@ -105,6 +105,18 @@ Wenn der Kandidat für die Ewigkeit taugt, gehört er eher in diesen Skill (Proz
 - **Keine Cron-Sessions extrahieren** — nur User-Sessions (kein `cron_` Prefix)
 
 ## Pitfalls (gemessen 17.09.2026)
+
+- **Der Live-Skill ist eine KOPIE — hier NICHT direkt ändern.** `~/.hermes/skills/exstraktor/`
+  (SKILL.md + scripts/) wird per `sync-skill.sh` aus dem Repo erzeugt:
+  `~/HAUPTLAGER/03_PROJEKTE/48_Extraktor_Tool` → Remote `github.com/nessos666/extraktor` (privat).
+  Änderungen nur am Live-Skill sind beim nächsten `sync-skill.sh` oder `hermes update` **weg**
+  (17.09.2026 verifiziert: Repo-Dateien 16.09. vs. Live 21.09., alle drei Dateien abweichend).
+  **Richtige Reihenfolge:** im REPO ändern → `./sync-skill.sh` → `./check.sh` → committen → pushen.
+  Umgekehrt (Live → Repo spiegeln) nur, wenn der Live-Stand der neuere und getestete ist —
+  danach `md5sum`-Vergleich: Live == Repo.
+- **`sync-skill.sh` und `check.sh` mitpflegen.** Beide listen die Dateien einzeln auf; ein neues
+  Skript (z.B. `memory_kandidaten.py`) fehlte in beiden und wäre nach einem Sync verloren gewesen.
+  Wer ein Skript ergänzt, trägt es in `sync-skill.sh` UND in die Datei-Prüfliste von `check.sh` ein.
 - **Nugget-Datei eindeutig benennen und VOR dem Einlesen gegenpruefen.** `/tmp/nuggets.json`
   kann eine **Altlast** sein: `write_file` hat sie stillschweigend NICHT ueberschrieben, die
   Datei vom 16.09. blieb liegen, `upsert.py` las fremde Nuggets („1 gespeichert, 12 Duplikate")
