@@ -147,6 +147,18 @@ Wenn der Kandidat für die Ewigkeit taugt, gehört er eher in diesen Skill (Proz
 - **`hermes sessions export`** kennt `--format jsonl|md|qmd|html|trace`, `--only user-prompts` und
   `--delete-after-verified`. JSONL = ein Datensatz pro Session mit verschachteltem `messages`-Array;
   der Export enthaelt nur die Zeilen, die noch in `state.db` stehen.
+- **`hermes sessions export` ist bei komprimierten Sessions UNVOLLSTAENDIG (gemessen 22.09.2026).**
+  Der JSONL-Export enthaelt **nur die Zeilen mit `active=1`**. Session `20260805_084114_b2f21562`
+  hatte 802 Zeilen, exportiert wurden **182** — die 610 komprimierten Zeilen (`active=0`,
+  `compacted=1`) mit **1,35 MB Originaltext** fehlten. Der Text ist in der DB noch vorhanden
+  (`_compressed_summary` ist nur ein Flag mit Wert `0`, nicht der Ersatztext). **Vor dem Loeschen
+  deshalb immer einen vollstaendigen Dump ziehen** und die Zeilenzahl gegen die DB pruefen:
+  ```sql
+  SELECT id, role, content, tool_name, tool_calls, timestamp, active, compacted
+  FROM messages WHERE session_id=? ORDER BY rowid
+  ```
+  als JSONL nach gzip ablegen (`~/HAUPTLAGER/33_System_Reports/session_backups/<id>_full.jsonl.gz`).
+  Beweis im Referenzfall: 802 Zeilen, 1.832.238 Bytes Inhalt, gzip 718.788 Bytes.
 - **Komprimierte Zeilen retten:** nur pre-update-Backups (`state.db.pre-update-emergency-<ISO>.bak`,
   je rund 1,5 GB, entstehen bei `hermes update`) und Markdown-Exporte. Vor Ablage im Git-Repo auf
   Geheimnis-Muster pruefen (sk-, ghp_, AKIA, xoxb-, Bearer).
