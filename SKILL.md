@@ -95,8 +95,7 @@ Wenn der Kandidat für die Ewigkeit taugt, gehört er eher in diesen Skill (Proz
 
 ### Schritt 5: Zusammenfassung + Lösch-Angebot
 - Zusammenfassung ausgeben: X Erkenntnisse → Qdrant, Y Fakten → Memory, Z Updates → MODEL_CARDs
-- Optional: Session löschen mit `hermes sessions delete <id>` — **vorher `hermes sessions export`**
-  (Kompression hat alte Zeilen bereits aus der DB entfernt, siehe Pitfalls)
+- Optional: Session löschen mit `hermes sessions delete <id>`
 
 ## Wichtige Regeln
 - **Living Memory ist NUR für kurze Regeln/David-Präferenzen (<150 Zeichen)** — kein Archiv!
@@ -138,56 +137,6 @@ Wenn der Kandidat für die Ewigkeit taugt, gehört er eher in diesen Skill (Proz
   `sentence_transformers` (5.6.1) und `qdrant_client` — `upsert.py` per
   `subprocess.run([PY, SCRIPT, "--gate"], stdin=open(nugget_file,"rb"))` aufrufen, Dry-Run mit
   `--gate --dry-run` vorweg, Punktzahlen per HTTP GET `/collections/<name>` gegenpruefen.
-
-## Pitfalls (Nachtrag 21.09.2026, gemessen)
-- **Loeschen der AKTIVEN Session:** `hermes sessions delete <id>` entfernt die Zeilen, aber der laufende
-  Chat erzeugt die Session-Zeile sofort neu (gleiche ID, neuer `started_at`) — die Nachrichten der
-  Loeschrunde selbst sind dann weg (gemessen: 46 Zeilen -> 1). Erst exportieren, dann Chat schliessen,
-  dann loeschen — oder den Verlust bewusst in Kauf nehmen.
-- **`hermes sessions export`** kennt `--format jsonl|md|qmd|html|trace`, `--only user-prompts` und
-  `--delete-after-verified`. JSONL = ein Datensatz pro Session mit verschachteltem `messages`-Array;
-  der Export enthaelt nur die Zeilen, die noch in `state.db` stehen.
-- **`hermes sessions export` ist bei komprimierten Sessions UNVOLLSTAENDIG (gemessen 22.09.2026).**
-  Der JSONL-Export enthaelt **nur die Zeilen mit `active=1`**. Session `20260805_084114_b2f21562`
-  hatte 802 Zeilen, exportiert wurden **182** — die 610 komprimierten Zeilen (`active=0`,
-  `compacted=1`) mit **1,35 MB Originaltext** fehlten. Der Text ist in der DB noch vorhanden
-  (`_compressed_summary` ist nur ein Flag mit Wert `0`, nicht der Ersatztext). **Vor dem Loeschen
-  deshalb immer einen vollstaendigen Dump ziehen** und die Zeilenzahl gegen die DB pruefen:
-  ```sql
-  SELECT id, role, content, tool_name, tool_calls, timestamp, active, compacted
-  FROM messages WHERE session_id=? ORDER BY rowid
-  ```
-  als JSONL nach gzip ablegen (`~/HAUPTLAGER/33_System_Reports/session_backups/<id>_full.jsonl.gz`).
-  Beweis im Referenzfall: 802 Zeilen, 1.832.238 Bytes Inhalt, gzip 718.788 Bytes.
-- **Komprimierte Zeilen retten:** nur pre-update-Backups (`state.db.pre-update-emergency-<ISO>.bak`,
-  je rund 1,5 GB, entstehen bei `hermes update`) und Markdown-Exporte. Vor Ablage im Git-Repo auf
-  Geheimnis-Muster pruefen (sk-, ghp_, AKIA, xoxb-, Bearer).
-- **Kompression loescht Nachrichten-Zeilen physisch aus `state.db`.** Session `20260920_111859_234d03`
-  hatte 434 Nachrichten (Rohsicherung), in der DB standen nur noch **30 Zeilen** (ab 17:52), alle mit
-  `_compressed_summary` markiert. Aeltere Zeilen ueberleben nur in pre-update-Backups
-  (`state.db.pre-update-emergency-*.bak`) und in Markdown-Exporten. **Vor dem Loeschen einer Session
-  also erst `hermes sessions export`**, sonst ist das Protokoll weg.
-- **`sessions.started_at` ist KEIN Erstellungszeitpunkt.** Bei einer nach dem Loeschen neu erzeugten
-  Zeile wandert der Wert mit der ersten Nachricht der aktuellen Inkarnation (gemessen 21.09.2026 an
-  `20260920_111859_234d03`, echter Start 20.09. 11:18: `started_at` = 18:10:56 um 18:10:56, dann
-  18:11:31 um 18:16:04). Echtes Datum nur in der `id` und in den Archivdateien. Ein Lauf-4-Nugget
-  nannte 18:10:18 (38 s daneben) und wurde per `set_payload` richtiggestellt.
-- **Nach abgebrochenem Turn (App-/Backend-Stopp) erst den Ist-Stand messen, dann arbeiten.**
-  Vier Messungen: 1) neueste `/tmp/nuggets*.json` nach mtime, 2) mtime + Schwanz von
-  `07_SYSTEM/33_System_Reports/extraction_log.md`, 3) Punkte-Zahl per HTTP GET
-  `/collections/<name>`, 4) grep der zuletzt gepatchten Skill-Pitfalls. Gemessen 21.09.2026:
-  Lauf 4 war danach vollstaendig — kein Schritt wurde wiederholt.
-- **Zahlen nur im SELBEN Moment vergleichen.** `sessions.message_count` und die Zeilenzahl in
-  `messages` stimmten bei gleichzeitiger Messung exakt ueberein (21 == 21, Differenz 0);
-  „17 gegen 19" war der Vergleich zweier Zeitpunkte und damit ein Messfehler.
-- **Falsche Details in gespeicherten Punkten per `set_payload` richtigstellen** statt einen
-  Korrektur-Nugget daneben zu legen — der falsche Fakt bleibt sonst in der Collection stehen.
-  Danach `retrieve()` gegenpruefen und die Korrektur im Log nennen.
-- **Zahlen immer mit Messzeitpunkt notieren** („434 Nachrichten am 21.09. 17:5x"). Ein Nugget mit
-  einer nackten Zahl wird durch Kompression/Loeschung spaeter falsch, ohne dass es auffaellt.
-- **Speicherung direkt ueber die `source` belegen, nicht nur per Similarity.** Neue Nuggets sind
-  fuer Suchphrasen oft nicht der Top-Treffer (gemessen: 0.577 und 0.494) — das ist kein Fehlschlag.
-  Beweis: `scroll` mit Filter auf die eigene `source` plus Punkte-Zahl vor/nach.
 
 ## Speicherorte
 - Living Memory (AKTIV, injiziert): `~/.hermes/memories/MEMORY.md` (Budget 3500 Zeichen) und
